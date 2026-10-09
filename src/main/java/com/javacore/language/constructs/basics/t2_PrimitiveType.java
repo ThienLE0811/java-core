@@ -27,5 +27,5 @@ package com.javacore.language.constructs.basics;
  * * - unicode: \u0108, hỗ trợ UTF-16 cho char và String.
  * * - null: literal đặc biệt, chỉ gán cho reference type, không gán cho kiểu nguyên thủy.
  */
-public class PrimitiveType {
+public class t2_PrimitiveType {
 }

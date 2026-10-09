@@ -1,6 +1,6 @@
 package com.javacore.language.constructs.basics;
 
-public class Variables {
+public class t1_Variables {
 
     public static int test = 1;
 

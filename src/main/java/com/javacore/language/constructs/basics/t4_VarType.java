@@ -1,7 +1,5 @@
 package com.javacore.language.constructs.basics;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.io.IOException;
 
 /**
@@ -27,7 +25,7 @@ import java.io.IOException;
  * Best practice: dùng var khi kiểu dữ liệu dài dòng giúp code dễ đọc hơn,
  * không lạm dụng tới mức người đọc không đoán được kiểu thực sự là gì.
  */
-public class VarType {
+public class t4_VarType {
     void main() throws IOException {
         var message = "Hello world!";
     }

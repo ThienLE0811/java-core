@@ -40,7 +40,7 @@ package com.javacore.language.constructs.basics;
  * sort/fill/copyOfRange ở mục 6) - nếu cần import java.util.Arrays trong file này
  * phải dùng fully-qualified name java.util.Arrays.sort(...) thay vì import thẳng.
  */
-public class Arrays {
+public class t3_Arrays {
 
     void displayBidimensionalArray(String[][] strings) {
         for (int arrayIndex = 0; arrayIndex < strings.length; arrayIndex++) {
