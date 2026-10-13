@@ -77,6 +77,7 @@ public class t1_Creating_Classes {
     void main() {
         var bike = new Bicycle(10, 20, 30);
         IO.println(bike.cadence + " " + bike.gear + " " + bike.speed);
+        bike.speedUp(5);
     }
 }
 
@@ -114,5 +115,4 @@ class Bicycle {
     public void speedUp(int increment) {
         speed += increment;
     }
-
 }
