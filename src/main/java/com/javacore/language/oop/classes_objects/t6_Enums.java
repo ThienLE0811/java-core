@@ -132,8 +132,8 @@ package com.javacore.language.oop.classes_objects;
  * này chèn thêm một hằng vào giữa danh sách là toàn bộ dữ liệu cũ bị
  * hiểu sai - IM LẶNG, không exception, không log, chỉ là đơn hàng "đã
  * hủy" bỗng thành "đang giao". Luôn luôn viết rõ
- * @Enumerated(EnumType.STRING).
- * - JACKSON thì ngược lại, mặc định serialize enum bằng name() nên an toàn
+ *
+ * @Enumerated(EnumType.STRING). - JACKSON thì ngược lại, mặc định serialize enum bằng name() nên an toàn
  * hơn. Nhưng đổi lại, ĐỔI TÊN một hằng là phá vỡ hợp đồng API với mọi
  * client đang chạy. Enum lộ ra ngoài API thì tên của nó là một phần của
  * hợp đồng, không phải chi tiết nội bộ.
@@ -184,11 +184,24 @@ package com.javacore.language.oop.classes_objects;
  */
 public class t6_Enums {
 
+    public enum DayOfWeek {
+        // enum constants are listed here:
+        MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
+    }
+
     void main() {
         // TODO 1 (muc 1, 3): viet enum TrangThaiDonHang co it nhat ba hang,
         //   moi hang mang mot nhan tieng Viet va mot ma so. Nho DAU CHAM PHAY
         //   sau danh sach hang. Thu bo dau cham phay de xem loi.
+        DayOfWeek someDay = DayOfWeek.SUNDAY;
 
+        switch (someDay) {
+            case MONDAY -> IO.println("The week just started.");
+            case TUESDAY, WEDNESDAY, THURSDAY -> IO.println("We are somewhere in the middle of the week.");
+            case FRIDAY -> IO.println("The weekend is near.");
+            case SATURDAY, SUNDAY -> IO.println("Weekend");
+            default -> throw new AssertionError("Should not happen");
+        }
         // TODO 2 (muc 4): in ra name(), ordinal(), toString() va values().
         //   Sau do goi valueOf voi ten viet THUONG de bat
         //   IllegalArgumentException va in e.getMessage().
