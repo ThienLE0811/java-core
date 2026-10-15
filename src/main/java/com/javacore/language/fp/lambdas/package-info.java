@@ -13,7 +13,7 @@
  *   <li>Method reference, bốn dạng</li>
  *   <li>Biến effectively final trong closure</li>
  *   <li>Kết hợp hàm: andThen, compose, negate, and, or</li>
- *   <li>Optional và cách dùng đúng</li>
+ *   <li>Comparator: comparing, thenComparing, reversed, nullsFirst</li>
  *   <li>Lambda khác anonymous class ở ý nghĩa của this</li>
  * </ul>
  */
