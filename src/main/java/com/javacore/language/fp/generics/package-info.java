@@ -9,6 +9,7 @@
  * <ul>
  *   <li>Generic class và generic method</li>
  *   <li>Bounded type parameter với extends</li>
+ *   <li>Type inference: diamond, target type, type witness</li>
  *   <li>Wildcard: ? extends T và ? super T</li>
  *   <li>PECS - Producer Extends, Consumer Super</li>
  *   <li>Type erasure và các hệ quả</li>
