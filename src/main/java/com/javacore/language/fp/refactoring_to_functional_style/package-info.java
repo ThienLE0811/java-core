@@ -5,14 +5,13 @@
  *
  * <p>Tài liệu: <a href="https://dev.java/learn/language/fp/refactoring-to-functional-style/">https://dev.java/learn/language/fp/refactoring-to-functional-style/</a>
  *
- * <p>Nội dung cần thực hành:
+ * <p>Nội dung 5 bài trong series của Venkat Subramaniam:
  * <ul>
- *   <li>Chuyển vòng lặp for sang stream</li>
- *   <li>Tách side-effect khỏi luồng xử lý</li>
- *   <li>Thay null bằng Optional</li>
- *   <li>Thay chuỗi if-else bằng Map chứa Function</li>
- *   <li>Tư duy khai báo thay cho tư duy từng bước</li>
- *   <li>Khi nào functional làm code tệ hơn, tránh lạm dụng</li>
+ *   <li>{@link com.javacore.language.fp.refactoring_to_functional_style.t1_SimpleLoops}: for() → IntStream.range() / rangeClosed()</li>
+ *   <li>{@link com.javacore.language.fp.refactoring_to_functional_style.t2_LoopsWithSteps}: for(...i = i + step) → iterate(), break → takeWhile()</li>
+ *   <li>{@link com.javacore.language.fp.refactoring_to_functional_style.t3_ForEachWithIf}: foreach(...) { if(...) } → forEach(), filter()</li>
+ *   <li>{@link com.javacore.language.fp.refactoring_to_functional_style.t4_IterationWithTransformation}: foreach(...) { ...transform... } → map(), filter().map()</li>
+ *   <li>{@link com.javacore.language.fp.refactoring_to_functional_style.t5_ConvertingToStreams}: BufferedReader loop → Files.lines() Stream</li>
  * </ul>
  */
 package com.javacore.language.fp.refactoring_to_functional_style;
