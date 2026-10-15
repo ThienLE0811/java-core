@@ -5,17 +5,12 @@
  *
  * <p>Tài liệu: <a href="https://dev.java/learn/language/annotations-exceptions/exceptions/">https://dev.java/learn/language/annotations-exceptions/exceptions/</a>
  *
- * <p>Nội dung cần thực hành:
+ * <p>Nội dung 4 bài trong series Exceptions:
  * <ul>
- *   <li>Phân cấp Throwable, Error, Exception, RuntimeException</li>
- *   <li>Checked và unchecked, khi nào dùng cái nào</li>
- *   <li>try-catch-finally và thứ tự thực thi</li>
- *   <li>try-with-resources và AutoCloseable</li>
- *   <li>Suppressed exception</li>
- *   <li>Multi-catch</li>
- *   <li>Tự định nghĩa exception</li>
- *   <li>Exception chaining và wrapping</li>
- *   <li>Anti-pattern: nuốt exception, catch Exception chung chung</li>
+ *   <li>{@link com.javacore.language.annotations_exceptions.exceptions.t1_WhatIsAnException}: Khái niệm Exception, Call Stack, phân cấp Throwable (Error vs Exception vs RuntimeException), quy tắc Catch or Specify</li>
+ *   <li>{@link com.javacore.language.annotations_exceptions.exceptions.t2_CatchingHandling}: try-catch-finally, try-with-resources, AutoCloseable, multi-catch, suppressed exceptions</li>
+ *   <li>{@link com.javacore.language.annotations_exceptions.exceptions.t3_ThrowingException}: throw, throws, custom exception, chained exceptions (cause), stack trace</li>
+ *   <li>{@link com.javacore.language.annotations_exceptions.exceptions.t4_UncheckedExceptionsControversy}: tranh luận Checked vs Unchecked, nguyên tắc chọn, anti-patterns khi xử lý ngoại lệ</li>
  * </ul>
  */
 package com.javacore.language.annotations_exceptions.exceptions;
