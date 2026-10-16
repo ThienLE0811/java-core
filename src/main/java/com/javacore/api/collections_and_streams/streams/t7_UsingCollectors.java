@@ -3,6 +3,7 @@ package com.javacore.api.collections_and_streams.streams;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Using a Collector as a Terminal Operation
@@ -116,6 +117,11 @@ public class t7_UsingCollectors {
                 words.stream().collect(Collectors.groupingBy(w -> w.charAt(0), Collectors.counting()));
         IO.println(countByFirstLetter);
 
+        List<Integer> numbers =
+                IntStream.range(0, 10)
+                        .boxed()
+                        .collect(Collectors.toList());
+        IO.println("numbers = " + numbers);
         // TODO 1 (mục 4): Dùng joining(", ", "[", "]") để in danh sách thành một chuỗi.
         //
         // TODO 2 (mục 5): partitioningBy theo độ dài lớn hơn 6. In map kết quả và kiểm tra

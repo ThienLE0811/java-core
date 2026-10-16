@@ -98,14 +98,29 @@ import java.util.List;
  */
 public class t1_MapFilterReduce {
 
+    record Sale(String seller, int amount) {
+    }
+
     void main() {
         // Một pipeline tối giản để thấy đủ ba phần: nguồn - intermediate - terminal.
         List<String> words = List.of("alpha", "beta", "gamma", "delta", "epsilon");
+        List<Sale> sales = List.of(
+                new Sale("an", 100),
+                new Sale("binh", 250),
+                new Sale("an", 400));
 
         long count = words.stream()          // nguồn
                 .filter(w -> w.length() == 5) // intermediate
                 .count();                     // terminal
         IO.println("so tu dai 5 ky tu: " + count);
+
+        // TODO 1: đủ ba bước filter - map - reduce.
+        String seller = "an";
+        int sumSale = sales.stream()
+                .filter(s -> seller.equals(s.seller())) // giữ nguyên KIỂU, giảm SỐ LƯỢNG
+                .mapToInt(Sale::amount)                 // giữ nguyên SỐ LƯỢNG, đổi KIỂU
+                .sum();                                 // terminal, gộp thành một con số
+        IO.println("tong amount cua " + seller + ": " + sumSale);
 
         // TODO 1 (mục 2): Tạo record Sale(String seller, int amount), dựng một List<Sale>,
         //   rồi tính tổng amount của một seller cụ thể bằng map-filter-reduce.
