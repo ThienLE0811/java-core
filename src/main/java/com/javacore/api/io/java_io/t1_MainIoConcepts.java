@@ -15,6 +15,8 @@ import java.nio.file.Path;
  * - Một câu cho cả bài: Java I/O có hai việc - ĐỊNH VỊ tài nguyên (Path) và MỞ LUỒNG tới nó (stream).
  * - Tài liệu gốc:
  * <a href="https://dev.java/learn/api/io/java-io/intro/">dev.java - Understanding the Main Java I/O Concepts</a>
+ * - Các đoạn trong ngoặc kép là trích nguyên văn từ trang gốc. Code thực hành bổ sung
+ * dần bên dưới theo các bài tập trong main(), biên dịch trên JDK 25.
  * <p>
  * ======================================================================
  * TRANG GỐC - UNDERSTANDING THE MAIN JAVA I/O CONCEPTS (mục 1 đến 4)
@@ -41,17 +43,15 @@ import java.nio.file.Path;
  * - {@code File} (Java SE 1.0): coi như wrapper quanh một chuỗi ký tự biểu diễn đường dẫn
  * trên file system mặc định.
  * - {@code Path} (Java SE 7, thuộc NIO2) sinh ra để vá bảy nhược điểm của {@code File}:
- * <ol>
- *   <li>Nhiều method THẤT BẠI MÀ KHÔNG NÉM EXCEPTION. {@code file.delete()} trả về
- *       {@code false} nhưng không biết vì file không tồn tại, vì thiếu quyền, hay vì lý do khác.</li>
- *   <li>{@code rename} chạy không nhất quán giữa các nền tảng.</li>
- *   <li>Không thực sự hỗ trợ symbolic link.</li>
- *   <li>Thiếu hỗ trợ metadata: quyền, chủ sở hữu, thuộc tính bảo mật.</li>
- *   <li>Đọc metadata không hiệu quả.</li>
- *   <li>Không scale: liệt kê thư mục lớn qua server có thể treo, hoặc ngốn bộ nhớ
- *       dẫn tới từ chối dịch vụ (denial of service).</li>
- *   <li>Không viết nổi code duyệt đệ quy cây thư mục mà xử lý đúng khi gặp symbolic link vòng.</li>
- * </ol>
+ * (1) Nhiều method THẤT BẠI MÀ KHÔNG NÉM EXCEPTION. {@code file.delete()} trả về {@code false}
+ * nhưng không biết vì file không tồn tại, vì thiếu quyền, hay vì lý do khác.
+ * (2) {@code rename} chạy không nhất quán giữa các nền tảng.
+ * (3) Không thực sự hỗ trợ symbolic link.
+ * (4) Thiếu hỗ trợ metadata: quyền, chủ sở hữu, thuộc tính bảo mật.
+ * (5) Đọc metadata không hiệu quả.
+ * (6) Không scale: liệt kê thư mục lớn qua server có thể treo, hoặc ngốn bộ nhớ dẫn tới
+ * từ chối dịch vụ (denial of service).
+ * (7) Không viết nổi code duyệt đệ quy cây thư mục mà xử lý đúng khi gặp symbolic link vòng.
  * - Kết luận nguyên văn của trang gốc: "So using the File class is not recommended anymore."
  * - Có một bài sau trong section này dạy refactor code {@code File} cũ sang {@code Path}.
  * <p>
@@ -62,12 +62,11 @@ import java.nio.file.Path;
  * - "a stream is a sequence of data": đọc/ghi MỘT PHẦN TỬ MỘT LẦN, bất kể bên trong cài đặt ra sao.
  * - BẪY TÊN GỌI: I/O stream KHÁC HẲN Stream API của Java SE 8 (bước 20). Trùng tên, khác khái niệm.
  * - API chia nội dung làm hai loại và thao tác làm hai chiều, giao nhau thành bốn lớp TRỪU TƯỢNG gốc:
- * <table border="1">
- *   <caption>Bốn lớp gốc của Java I/O</caption>
- *   <tr><th>&nbsp;</th><th>Reading</th><th>Writing</th></tr>
- *   <tr><td>Ký tự (text, XML, JSON)</td><td>{@code Reader}</td><td>{@code Writer}</td></tr>
- *   <tr><td>Byte (ảnh, video)</td><td>{@code InputStream}</td><td>{@code OutputStream}</td></tr>
- * </table>
+ * <p>
+ * .                          Reading         Writing
+ * Ký tự (text, XML, JSON)    Reader          Writer
+ * Byte (ảnh, video)          InputStream     OutputStream
+ * <p>
  * - Mọi lớp byte stream đều thừa kế {@code InputStream}/{@code OutputStream}; mọi lớp character
  * stream đều thừa kế {@code Reader}/{@code Writer}. Nhìn hậu tố tên lớp là biết nó thuộc ô nào.
  * <p>

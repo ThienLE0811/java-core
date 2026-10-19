@@ -11,10 +11,12 @@ import java.nio.file.Path;
  * 0. Vị trí bài này
  * - Bước 21/41, bài 2/18 trong section The Java I/O API của lộ trình dev.java/learn.
  * - Thuộc nhóm File System Basics của section.
- * - Một câu cho cả bài: File là cách cũ (Java 1.0), Path + Files là cách mới (Java 7+);
- *   chuyển đổi qua lại giữa hai cách bằng file.toPath() và path.toFile().
+ * - Một câu cho cả bài: {@code File} là cách cũ (Java 1.0), {@code Path} + {@code Files} là cách
+ * mới (Java 7+); chuyển đổi qua lại giữa hai cách bằng {@code file.toPath()} và {@code path.toFile()}.
  * - Tài liệu gốc:
  * <a href="https://dev.java/learn/api/io/java-io/file-system/file-path/">dev.java - Accessing Resources using Paths</a>
+ * - Các đoạn trong ngoặc kép là trích nguyên văn từ trang gốc. Code thực hành bổ sung
+ * dần bên dưới theo các bài tập trong main(), biên dịch trên JDK 25.
  * <p>
  * ======================================================================
  * TRANG GỐC - ACCESSING RESOURCES USING PATHS (mục 1 đến 3)
@@ -23,47 +25,56 @@ import java.nio.file.Path;
  * 1. LỚP DI SẢN FILE
  * - (Introducing the Legacy File Class)
  * - Khái niệm: đại diện trừu tượng cho đường dẫn (tập tin, thư mục).
- * - new File(...) chỉ tạo đối tượng trong bộ nhớ, KHÔNG tạo file thật trên ổ cứng.
- * - Hạn chế: xóa hay tạo file thất bại chỉ trả về false chứ không báo lý do, không hỗ trợ tốt tính năng hiện đại.
+ * - {@code new File(...)} chỉ tạo đối tượng trong bộ nhớ, KHÔNG tạo file thật trên ổ cứng.
+ * - Hạn chế: xóa hay tạo file thất bại chỉ trả về {@code false} chứ không báo lý do,
+ * không hỗ trợ tốt tính năng hiện đại.
  * <p>
  * 2. INTERFACE PATH
  * - (Introducing the Path Interface)
- * - Là chuẩn mới từ Java 7, dùng thay thế cho File.
+ * - Là chuẩn mới từ Java 7, dùng thay thế cho {@code File}.
  * - Biểu diễn đường dẫn tập tin hoặc thư mục.
- * - Đối tượng Path cũng chỉ nằm trong bộ nhớ (file có thể chưa tồn tại trên đĩa).
- * - Các thao tác như ghép đường dẫn (resolve), cắt chuỗi chỉ xử lý chữ, không chạm vào ổ đĩa.
- * - Khi nào cần thao tác thật với ổ cứng (tạo, xóa, kiểm tra file), ta dùng các hàm static của lớp Files.
+ * - Đối tượng {@code Path} cũng chỉ nằm trong bộ nhớ (file có thể chưa tồn tại trên đĩa).
+ * - Các thao tác như ghép đường dẫn ({@code resolve}), cắt chuỗi chỉ xử lý chữ, không chạm vào ổ đĩa.
+ * - Khi nào cần thao tác thật với ổ cứng (tạo, xóa, kiểm tra file), ta dùng các method static
+ * của lớp {@code Files}.
  * <p>
  * 3. REFACTOR CODE TỪ FILE SANG PATH
  * - (Refactoring your Code to Using Path)
- * - Hai hàm cầu nối quan trọng nhất:
- *   + Từ File cũ sang Path mới: gọi file.toPath()
- *   + Từ Path mới về File cũ: gọi path.toFile()
+ * - Hai method cầu nối quan trọng nhất:
+ * + Từ {@code File} cũ sang {@code Path} mới: gọi {@code file.toPath()}
+ * + Từ {@code Path} mới về {@code File} cũ: gọi {@code path.toFile()}
  * - Bảng thay thế các thao tác cơ bản:
- *   + new File(parent, "con.txt")  ->  parentPath.resolve("con.txt")
- *   + file.exists()                ->  Files.exists(path)
- *   + file.length()                ->  Files.size(path)
- *   + file.createNewFile()         ->  Files.createFile(path)
- *   + file.delete()                ->  Files.delete(path) hoặc Files.deleteIfExists(path)
+ * <p>
+ * new File(parent, "con.txt")  ->  parentPath.resolve("con.txt")
+ * file.exists()                ->  Files.exists(path)
+ * file.length()                ->  Files.size(path)
+ * file.createNewFile()         ->  Files.createFile(path)
+ * file.delete()                ->  Files.delete(path) hoặc Files.deleteIfExists(path)
  * <p>
  * ======================================================================
  * ĐIỂM NGOÀI TRANG GỐC - ĐÁNG GHI LẠI
  * ======================================================================
  * <p>
  * 4. MẸO DỄ NHỚ CHO NGƯỜI MỚI
- * - Path = "Tấm biển ghi địa chỉ nhà" (chỉ là chữ, nhà có thật hay không chưa biết).
- * - Files = "Người đi tới địa chỉ đó để làm việc" (gõ cửa, kiểm tra nhà có tồn tại không, xây nhà mới, phá nhà).
- * - Khi dùng thư viện cũ bắt truyền File: cứ dùng Path để xử lý, đến dòng cuối cùng thì gọi path.toFile().
+ * - {@code Path} = tấm biển ghi địa chỉ nhà (chỉ là chữ, nhà có thật hay không chưa biết).
+ * - {@code Files} = người đi tới địa chỉ đó để làm việc (gõ cửa, kiểm tra nhà có tồn tại không,
+ * xây nhà mới, phá nhà).
+ * - Khi dùng thư viện cũ bắt truyền {@code File}: cứ dùng {@code Path} để xử lý, đến dòng cuối
+ * cùng thì gọi {@code path.toFile()}.
+ * - Đối chiếu TypeScript: {@code Path} ≈ module {@code path} của Node (thuần chuỗi), {@code Files}
+ * ≈ module {@code fs} (chạm đĩa thật). Node tách sẵn hai module từ đầu, Java gộp cả hai vào
+ * {@code File} rồi mất 15 năm mới tách ra.
  * <p>
  * ======================================================================
  * CHECKLIST TỰ KIỂM TRA
  * ======================================================================
  * <p>
- * 5. CÂU HỎI TỰ ÔN TẬP
- * - Muốn chuyển từ File sang Path thì gọi hàm gì?
- * - Muốn chuyển từ Path sang File thì gọi hàm gì?
- * - Lệnh Path.of("a.txt") có tạo ra file a.txt trên đĩa không?
- * - Để kiểm tra một Path có tồn tại trên đĩa thật hay không, ta dùng hàm nào của lớp Files?
+ * 5. TRẢ LỜI ĐƯỢC KHÔNG CẦN TRA THÌ COI NHƯ XONG BÀI
+ * - Muốn chuyển từ {@code File} sang {@code Path} thì gọi method gì?
+ * - Muốn chuyển từ {@code Path} sang {@code File} thì gọi method gì?
+ * - Lệnh {@code Path.of("a.txt")} có tạo ra file a.txt trên đĩa không?
+ * - Để kiểm tra một {@code Path} có tồn tại trên đĩa thật hay không, dùng method nào của {@code Files}?
+ * - Viết lại {@code new File(parent, "con.txt")} theo kiểu {@code Path}.
  */
 public class t2_AccessingResourcesUsingPaths {
 
@@ -128,14 +139,21 @@ public class t2_AccessingResourcesUsingPaths {
 
 
         // ==============================================================
-        // BÀI TẬP TỰ LUYỆN ĐƠN GIẢN DÀNH CHO BẠN
+        // BÀI TẬP TỰ LUYỆN
         // ==============================================================
-        // TODO 1: Dùng Path.of(...) để tạo một đường dẫn trỏ tới file "thong-tin.txt".
-        //         In ra màn hình đường dẫn tuyệt đối của nó bằng hàm toAbsolutePath().
+        // TODO 1 (mục 2): Dùng Path.of(...) để tạo một đường dẫn trỏ tới file "thong-tin.txt".
+        //   In ra màn hình đường dẫn tuyệt đối của nó bằng toAbsolutePath().
         //
-        // TODO 2: Dùng Files.exists(...) để kiểm tra xem file "thong-tin.txt" có thật trên máy bạn không.
+        // TODO 2 (mục 2): Dùng Files.exists(...) để kiểm tra xem file "thong-tin.txt" có thật
+        //   trên máy bạn không.
         //
-        // TODO 3: Thử tạo một đối tượng File cũ bằng new File("test.txt"), rồi dùng hàm .toPath()
-        //         để lấy đối tượng Path tương ứng và in ra màn hình.
+        // TODO 3 (mục 3): Thử tạo một đối tượng File cũ bằng new File("test.txt"), rồi dùng
+        //   .toPath() để lấy đối tượng Path tương ứng và in ra màn hình.
+        //
+        // TODO 4 (mục 3): Viết lại cả 5 dòng trong bảng thay thế ở mục 3 thành code chạy được,
+        //   xác nhận từng cặp cho cùng kết quả.
+        //
+        // TODO 5 (mục 1): Gọi new File("khong-ton-tai.txt").delete() và Files.delete(...) trên
+        //   cùng đường dẫn đó. Dán lại hai kết quả, chỉ ra cái nào nói được NGUYÊN NHÂN.
     }
 }
