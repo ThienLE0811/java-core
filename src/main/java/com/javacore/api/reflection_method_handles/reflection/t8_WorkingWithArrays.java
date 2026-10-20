@@ -1,5 +1,8 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+
 /**
  * Working with Arrays
  * <p>
@@ -156,6 +159,50 @@ package com.javacore.api.reflection_method_handles.reflection;
 public class t8_WorkingWithArrays {
 
     void main() {
+        // 1. Nhận diện kiểu mảng. getComponentType() bóc ĐÚNG MỘT tầng,
+        //    và trả null nếu không phải mảng (mục 2).
+        System.out.println("1. int[].isArray()         -> " + int[].class.isArray());
+        System.out.println("   int[].component         -> " + int[].class.getComponentType());
+        System.out.println("   int[][].component       -> " + int[][].class.getComponentType());
+        System.out.println("   String.component        -> " + String.class.getComponentType());
+
+        // 2. Tạo mảng động. newInstance trả về Object chứ không phải int[] -
+        //    muốn dùng như mảng thật thì phải ép kiểu (mục 3).
+        Object o = Array.newInstance(int.class, 10);
+        for (int i = 0; i < Array.getLength(o); i++) {
+            Array.set(o, i, 2 * i);
+        }
+        System.out.println("2. Array.getLength(o)      -> " + Array.getLength(o));
+        System.out.println("   ép (int[]) o            -> " + Arrays.toString((int[]) o));
+
+        // 3. Quy tắc dễ sai nhất: MỞ RỘNG kiểu thì được, THU HẸP thì không (mục 3).
+        long[] longs = new long[1];
+        int[] ints = new int[1];
+        Array.setInt(longs, 0, 7);              // int -> long: không mất dữ liệu
+        System.out.println("3. setInt vào long[]       -> " + longs[0]);
+        try {
+            Array.setLong(ints, 0, 7L);         // long -> int: mất dữ liệu
+        } catch (IllegalArgumentException e) {
+            System.out.println("   setLong vào int[]       -> IllegalArgumentException: " + e.getMessage());
+        }
+
+        // 4. Vượt chỉ số: y hệt mảng thường, không có exception riêng của reflection (mục 3).
+        try {
+            Array.get(o, 99);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("4. Array.get(o, 99)        -> ArrayIndexOutOfBoundsException");
+        }
+
+        // 5. Mảng là COVARIANT: String[] là kiểu con của Object[] nên dòng dưới BIÊN DỊCH LỌT,
+        //    chỉ nổ lúc chạy. Đây là cái giá Java trả cho mảng covariant (mục 6).
+        Object[] names = new String[2];
+        try {
+            names[0] = 42;
+        } catch (ArrayStoreException e) {
+            System.out.println("5. ghi Integer vào String[] -> ArrayStoreException: " + e.getMessage());
+        }
+
+        System.out.println();
         // TODO 1 (mục 2): Lấy Class của int[], String[], int[][], String[][][]. Với mỗi cái
         //   in isArray(), getComponentType(), getName(), getSimpleName().
         //   Đối chiếu getName() với bảng mã hóa ở bài t3 mục 6.

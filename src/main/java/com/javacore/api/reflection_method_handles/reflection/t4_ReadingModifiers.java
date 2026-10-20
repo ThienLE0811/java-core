@@ -1,5 +1,9 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Collection;
+
 /**
  * Reading Modifiers
  * <p>
@@ -170,7 +174,37 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t4_ReadingModifiers {
 
-    void main() {
+    // Field dùng làm đối tượng soi: vừa public, vừa static, vừa final
+    public static final int MAX = 10;
+
+    void main() throws NoSuchFieldException {
+        Field f = t4_ReadingModifiers.class.getDeclaredField("MAX");
+        int mods = f.getModifiers();
+
+        // 1. Cái int trả về thực chất là một BITMASK (mục 3, mục 5)
+        System.out.println("getModifiers()      = " + mods
+                + "  (nhị phân: " + Integer.toBinaryString(mods) + ")");
+        System.out.println("   -> bit0 PUBLIC(1) + bit3 STATIC(8) + bit4 FINAL(16) = 25");
+        System.out.println("Modifier.toString() = " + Modifier.toString(mods));
+
+        // 2. Giải mã bằng các method tĩnh của lớp Modifier (mục 3)
+        System.out.println("isPublic/isStatic/isFinal = " + Modifier.isPublic(mods)
+                + " / " + Modifier.isStatic(mods) + " / " + Modifier.isFinal(mods));
+
+        // 3. BẪY: so sánh bằng == gần như luôn SAI, vì mods gộp nhiều bit (mục 5)
+        System.out.println();
+        System.out.println("mods == Modifier.PUBLIC       -> " + (mods == Modifier.PUBLIC));
+        System.out.println("(mods & Modifier.PUBLIC) != 0 -> " + ((mods & Modifier.PUBLIC) != 0));
+
+        // 4. Java 20: accessFlags() trả về Set<AccessFlag>, khỏi giải mã bit (mục 4b)
+        System.out.println();
+        System.out.println("accessFlags() của MAX = " + f.accessFlags());
+        System.out.println("String.class          = " + String.class.accessFlags());
+        System.out.println("Collection.class      = " + Collection.class.accessFlags());
+        System.out.println("   -> SUPER là cờ bytecode cũ, không ứng với từ khóa nào");
+        System.out.println("   -> Collection là ABSTRACT dù không ai gõ từ đó: compiler tự thêm");
+
+        System.out.println();
         // TODO 1 (mục 3): In isFinal và isAbstract cho String, Collection, ArrayList,
         //   một abstract class tự viết, và một enum. Lập bảng và giải thích mỗi dòng.
         //

@@ -1,5 +1,8 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Invoking Constructors
  * <p>
@@ -213,7 +216,52 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t7_InvokingConstructors {
 
-    void main() {
+    /** Cho ví dụ 2: record LỒNG và PUBLIC -> canonical constructor cũng public (mục 5b). */
+    public record Point(int x, int y) {
+    }
+
+    void main() throws ReflectiveOperationException {
+        // 1. Constructor không tham số. Đây là mẫu DUY NHẤT nên dùng -
+        //    Class.newInstance() đã deprecate từ Java 9 (mục 4).
+        Constructor<String> emptyString = String.class.getConstructor();
+        System.out.println("1. new String()         -> \"" + emptyString.newInstance() + "\"");
+
+        // 2. Có tham số thì nêu KIỂU lúc tìm, nêu GIÁ TRỊ lúc gọi (mục 5b).
+        Constructor<Point> point = Point.class.getConstructor(int.class, int.class);
+        System.out.println("2. canonical ctor       -> " + point.newInstance(1, 2));
+
+        // 3. Abstract và interface đều không tạo được, nhưng hỏng ở HAI BƯỚC khác nhau (mục 5a).
+        try {
+            java.io.InputStream.class.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException e) {
+            System.out.println("3. abstract class       -> InstantiationException (hỏng lúc newInstance)");
+        }
+        try {
+            Runnable.class.getDeclaredConstructor();
+        } catch (NoSuchMethodException e) {
+            System.out.println("   interface            -> NoSuchMethodException: " + e.getMessage());
+        }
+
+        // 4. Constructor private: IllegalAccessException, mở bằng setAccessible (mục 5c).
+        Constructor<Secret> secret = Secret.class.getDeclaredConstructor();
+        try {
+            secret.newInstance();
+        } catch (IllegalAccessException e) {
+            System.out.println("4. ctor private         -> IllegalAccessException");
+        }
+        secret.setAccessible(true);
+        System.out.println("   sau setAccessible    -> " + secret.newInstance());
+
+        // 5. Constructor ĐÃ CHẠY rồi mới ném -> exception bị BỌC trong
+        //    InvocationTargetException. getMessage() là null, phải bóc getCause() (mục 9).
+        try {
+            Boom.class.getDeclaredConstructor(int.class).newInstance(0);
+        } catch (InvocationTargetException e) {
+            System.out.println("5. e.getMessage()       -> " + e.getMessage());
+            System.out.println("   e.getCause()         -> " + e.getCause());
+        }
+
+        System.out.println();
         // TODO 1 (mục 1): In getDeclaredConstructors() và getConstructors() của String trên
         //   JDK 25. Đếm cả hai và tìm ra những constructor không public. Giải thích vì sao
         //   có constructor nhận tham số kiểu Void.
@@ -256,5 +304,31 @@ public class t7_InvokingConstructors {
         //
         // TODO 12 (mục 9): Đo thời gian tạo 1 triệu object theo ba cách: new trực tiếp,
         //   Constructor cache, và getDeclaredConstructor mỗi vòng. Lập bảng.
+    }
+}
+
+/**
+ * Cho ví dụ 4. Phải là lớp TOP-LEVEL, KHÔNG được là lớp lồng: từ Java 11 các lớp lồng trong
+ * cùng một lớp ngoài là "nestmate", reflection truy cập private của nhau thoải mái - để lồng
+ * thì ví dụ 4 sẽ không ném IllegalAccessException nữa.
+ */
+class Secret {
+
+    private Secret() {
+    }
+
+    @Override
+    public String toString() {
+        return "Secret da duoc tao";
+    }
+}
+
+/** Cho ví dụ 5: constructor chạy được nhưng ném exception của chính nó. */
+class Boom {
+
+    Boom(int x) {
+        if (x == 0) {
+            throw new ArithmeticException("x khong duoc bang 0");
+        }
     }
 }

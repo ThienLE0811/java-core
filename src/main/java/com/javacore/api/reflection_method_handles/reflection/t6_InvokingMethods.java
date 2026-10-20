@@ -1,5 +1,8 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 /**
  * Invoking Methods
  * <p>
@@ -282,7 +285,38 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t6_InvokingMethods {
 
-    void main() {
+    void main() throws ReflectiveOperationException {
+        String hello = "Hello world";
+
+        // 1. Tìm method rồi gọi. invoke() luôn trả Object -> phải tự ép kiểu (mục 6a)
+        Method length = String.class.getMethod("length");
+        System.out.println("1. length()            -> " + (int) length.invoke(hello));
+
+        // 2. Tên method KHÔNG định danh duy nhất vì có nạp chồng.
+        //    Kiểu tham số là thứ chọn đúng bản cần gọi (mục 1, 6b).
+        Method substring = String.class.getMethod("substring", int.class, int.class);
+        System.out.println("2. substring(6, 11)    -> " + substring.invoke(hello, 6, 11));
+
+        // 3. int.class KHÁC Integer.class. Autoboxing là tiện nghi của trình biên dịch,
+        //    reflection không có (mục 2, nối tiếp t2 mục 6).
+        try {
+            String.class.getMethod("substring", Integer.class, Integer.class);
+        } catch (NoSuchMethodException e) {
+            System.out.println("3. tìm bằng Integer.class -> NoSuchMethodException: " + e.getMessage());
+        }
+
+        // 4. ĐIỂM PHẢI NHỚ KỸ NHẤT: method chạy rồi mới ném exception thì exception đó
+        //    bị BỌC trong InvocationTargetException (mục 6c, mục 10).
+        //    parseInt là static -> receiver truyền null.
+        Method parseInt = Integer.class.getMethod("parseInt", String.class);
+        try {
+            parseInt.invoke(null, "abc");
+        } catch (InvocationTargetException e) {
+            System.out.println("4. e.getMessage()      -> " + e.getMessage());
+            System.out.println("   e.getCause()        -> " + e.getCause());
+        }
+
+        System.out.println();
         // TODO 1 (mục 1): Dựng lại lớp User của trang gốc (getName public, validate private,
         //   toString ghi đè). Chạy getMethods() và getDeclaredMethods(), dán cả hai output.
         //   Xóa toString rồi chạy lại getMethods() - xác nhận toString của Object xuất hiện.

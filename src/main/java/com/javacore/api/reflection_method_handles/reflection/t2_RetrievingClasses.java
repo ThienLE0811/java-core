@@ -275,10 +275,31 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t2_RetrievingClasses {
 
-    void main() {
+    void main() throws ClassNotFoundException {
         // TODO 1 (mục 2): Chạy đủ bảy dòng ở bảng mục 2 trên JDK 25 và dán output thật vào
         //   note. Chú ý tên lambda và tên lớp vô danh - chạy lại lần hai xem có đổi không.
-        //
+        // Cách 1: có instance trong tay -> getClass()
+        Object s = "foo";
+        System.out.println("1. getClass()         -> " + s.getClass());
+
+        // Cách 2: biết tên kiểu lúc viết code -> .class  (compiler kiểm tra giúp)
+        System.out.println("2. .class             -> " + String.class);
+        System.out.println("2. .class nguyên thủy -> " + int.class);
+
+        // Cách 3: tên lớp nằm trong DỮ LIỆU (chuỗi) -> forName
+        System.out.println("3. forName()          -> " + Class.forName("java.lang.String"));
+
+        // Cách 4 (Java 22): tên kiểu nguyên thủy dạng chuỗi
+        System.out.println("4. forPrimitiveName() -> " + Class.forPrimitiveName("int"));
+
+        // Cách 5: trường TYPE của lớp bao
+        System.out.println("5. Integer.TYPE       -> " + Integer.TYPE);
+
+        // Mỗi kiểu chỉ có ĐÚNG MỘT object Class -> so sánh bằng ==
+        System.out.println();
+        System.out.println("s.getClass() == String.class  : " + (s.getClass() == String.class));
+        System.out.println("Integer.TYPE == int.class     : " + (Integer.TYPE == int.class));
+        System.out.println("Integer.TYPE == Integer.class : " + (Integer.TYPE == Integer.class));
         // TODO 2 (mục 2): Khai báo "CharSequence cs = new StringBuilder();" rồi in
         //   cs.getClass(). Giải thích vì sao kiểu khai báo không quyết định kết quả.
         //

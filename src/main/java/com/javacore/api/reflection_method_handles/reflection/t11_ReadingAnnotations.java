@@ -1,5 +1,13 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Repeatable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+
 /**
  * Reading Annotations
  * <p>
@@ -215,7 +223,70 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t11_ReadingAnnotations {
 
-    void main() {
+    @Retention(RetentionPolicy.RUNTIME)
+    @Inherited
+    @interface Bean {
+        String value();
+    }
+
+    /** CỐ Ý thiếu @Retention -> mặc định là CLASS -> reflection KHÔNG thấy (mục 6). */
+    @interface Invisible {
+    }
+
+    @Repeatable(Validators.class)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Validator {
+        String value();
+    }
+
+    /** Container của annotation lặp lại (mục 3). */
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface Validators {
+        Validator[] value();
+    }
+
+    @Bean("personBean")
+    @Invisible
+    static class Person {
+
+        @Validator("NON_NULL")
+        @Validator("NON_EMPTY")
+        String name;
+    }
+
+    /** Không đánh dấu gì - mọi annotation thấy được đều là kế thừa từ Person (mục 4). */
+    static class User extends Person {
+    }
+
+    void main() throws ReflectiveOperationException {
+        // 1. Thuộc tính của annotation đọc bằng cách GỌI METHOD CÙNG TÊN (mục 2).
+        System.out.println("1. isAnnotationPresent(Bean) -> " + Person.class.isAnnotationPresent(Bean.class));
+        System.out.println("   Bean.value()              -> " + Person.class.getAnnotation(Bean.class).value());
+
+        // 2. @Invisible quên @Retention(RUNTIME) -> biến mất khỏi danh sách, và KHÔNG có
+        //    lỗi nào báo cho bạn biết. Lỗi số một khi tự viết annotation (mục 6).
+        System.out.println("2. Person.getAnnotations()   -> " + Arrays.toString(Person.class.getAnnotations()));
+        System.out.println("   thấy @Invisible không?    -> " + Person.class.isAnnotationPresent(Invisible.class));
+
+        // 3. Ở bài này chữ Declared nghĩa là "không tính kế thừa", KHÔNG phải "thấy private"
+        //    như các bài trước (mục 2, mục 4).
+        System.out.println("3. User.getDeclaredAnnot()   -> " + Arrays.toString(User.class.getDeclaredAnnotations()));
+        System.out.println("   User.getAnnotations()     -> " + Arrays.toString(User.class.getAnnotations()));
+
+        // 4. Annotation lặp lại: trong bytecode chỉ có MỘT annotation - cái container.
+        //    getAnnotationsByType() bóc hộ, nên luôn dùng nó (mục 3).
+        Field name = Person.class.getDeclaredField("name");
+        System.out.println("4. getAnnotations()          -> " + Arrays.toString(name.getAnnotations()));
+        System.out.println("   getAnnotationsByType()    -> " + Arrays.toString(name.getAnnotationsByType(Validator.class)));
+
+        // 5. Annotation nhận về là một PROXY do JVM sinh, không phải lớp thật.
+        //    getClass() vô dụng, luôn dùng annotationType() (mục 7).
+        Bean bean = Person.class.getAnnotation(Bean.class);
+        System.out.println("5. bean.getClass()           -> " + bean.getClass());
+        System.out.println("   bean.annotationType()     -> " + bean.annotationType());
+        System.out.println("   bean instanceof Proxy     -> " + (bean instanceof Proxy));
+
+        System.out.println();
         // TODO 1 (mục 2): Định nghĩa @Bean và @Serialized(format) đúng như trang gốc, đặt lên
         //   một lớp Person. In isAnnotationPresent, getAnnotations, và gọi annotation.format().
         //   Dán output.

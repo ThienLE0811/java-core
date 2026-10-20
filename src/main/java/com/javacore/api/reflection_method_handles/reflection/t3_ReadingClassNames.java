@@ -196,7 +196,44 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t3_ReadingClassNames {
 
-    void main() {
+    static class Inner {
+    } // static nested class
+
+    static void in(String nhan, Class<?> c) {
+        System.out.printf("%-12s | %-30s | %-22s | %-22s | %s%n",
+                nhan, c.getName(), c.getTypeName(), String.valueOf(c.getCanonicalName()), "\"" + c.getSimpleName() + "\"");
+    }
+
+    void main() throws Exception {
+        // Minh họa bảng 4 tên (Mục 7)
+        System.out.printf("%-12s | %-30s | %-22s | %-22s | %s%n",
+                "Đối tượng", "getName()", "getTypeName()", "getCanonicalName()", "getSimpleName()");
+        System.out.println("-".repeat(110));
+
+        in("String", String.class);
+        in("Inner", Inner.class);
+        in("int[]", int[].class);
+        in("String[][]", String[][].class);
+        in("Vô danh", new Object() {}.getClass());
+        in("Lambda", ((Runnable) () -> {}).getClass());
+
+        System.out.println();
+        System.out.println("=== THỬ NGHIỆM Class.forName() VỚI CÁC LOẠI TÊN (Mục 8) ===");
+
+        // 1. Nạp bằng getName() (có dấu $) -> Thành công
+        System.out.println("1. forName(Inner.getName())          -> " + Class.forName(Inner.class.getName()));
+
+        // 2. Nạp bằng getCanonicalName() (dấu chấm) -> Ném ClassNotFoundException
+        try {
+            Class.forName(Inner.class.getCanonicalName());
+        } catch (ClassNotFoundException e) {
+            System.out.println("2. forName(Inner.getCanonicalName()) -> Ném ClassNotFoundException (đúng như dự đoán!)");
+        }
+
+        // 3. Mảng nạp ngược bằng chuỗi mã hóa của getName() -> Thành công
+        System.out.println("3. forName(String[][].getName())      -> " + Class.forName(String[][].class.getName()));
+
+        System.out.println();
         // TODO 1 (mục 1): In getCanonicalName() của new ArrayList<>(), Arrays.asList(...),
         //   List.of(...) với 1, 2 và 4 phần tử. Dán output. Giải thích vì sao List.of ra tên
         //   khác nhau theo số phần tử.

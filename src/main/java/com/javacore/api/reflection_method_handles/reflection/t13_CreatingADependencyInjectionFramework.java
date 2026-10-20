@@ -1,5 +1,15 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * Creating a Dependency Injection Framework
  * <p>
@@ -250,7 +260,137 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t13_CreatingADependencyInjectionFramework {
 
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Singleton {
+    }
+
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Inject {
+    }
+
+    public record Message(String message) {
+    }
+
+    @Singleton
+    public static class DBService {
+    }
+
+    public static class MyApplication {
+
+        @Inject
+        private DBService dbService;
+
+        public DBService dbService() {
+            return dbService;
+        }
+    }
+
+    /** Để thấy giới hạn ở mục 5: tiêm theo interface thì factory này bó tay. */
+    public interface Repository {
+    }
+
+    public static class BadApplication {
+
+        @Inject
+        private Repository repository;
+    }
+
+    /**
+     * Singleton viết bằng enum - đúng kết luận của t7 mục 6: đây là loại singleton
+     * reflection không phá được.
+     */
+    public enum BeanFactory {
+        INSTANCE;
+
+        private final ConcurrentMap<Class<?>, Object> registry = new ConcurrentHashMap<>();
+
+        public <T> T getInstanceOf(Class<T> beanClass, Object... arguments) {
+            // Không có @Singleton -> cứ tạo mới (tầng một, mục 2).
+            if (!beanClass.isAnnotationPresent(Singleton.class)) {
+                return instantiateBeanClass(beanClass, arguments);
+            }
+            // Có @Singleton -> tra registry (tầng hai, mục 3).
+            Object bean = registry.get(beanClass);
+            if (bean == null) {
+                // Nhiều luồng có thể cùng vào đây và cùng tạo object. CHẤP NHẬN lãng phí
+                // vài object để đổi lấy không phải khóa - đánh đổi có chủ đích (mục 3).
+                bean = instantiateBeanClass(beanClass, arguments);
+                registry.putIfAbsent(beanClass, bean);
+                // BẮT BUỘC get() lại: object bạn vừa put CÓ THỂ không phải object cuối cùng
+                // nằm trong map. Trả về biến cục bộ là "singleton" hết còn là singleton,
+                // và lỗi này KHÔNG lộ ra khi test một luồng (mục 3).
+                bean = registry.get(beanClass);
+            }
+            // Class.cast thay cho ép kiểu (T) - nổ sớm và rõ ràng nếu sai (mục 6).
+            return beanClass.cast(bean);
+        }
+
+        private <T> T instantiateBeanClass(Class<T> beanClass, Object... arguments) {
+            try {
+                Class<?>[] types = Arrays.stream(arguments)
+                        .map(Object::getClass)
+                        .toArray(Class[]::new);
+                // Bước 1: dựng bean. Lúc này MỌI FIELD CỦA NÓ ĐỀU NULL (t7).
+                T bean = beanClass.getConstructor(types).newInstance(arguments);
+
+                // Bước 2-4: quét field, lọc @Inject, tạo dependency rồi set (tầng ba, mục 4).
+                for (Field field : beanClass.getDeclaredFields()) {
+                    if (!field.isAnnotationPresent(Inject.class)) {
+                        continue;
+                    }
+                    // ĐỆ QUY qua chính factory -> dependency cũng tôn trọng @Singleton.
+                    Object value = getInstanceOf(field.getType());
+                    // Gọi kể cả khi field public: thừa thì không sao, thiếu thì vỡ (t5).
+                    field.setAccessible(true);
+                    field.set(bean, value);
+                }
+                return bean;
+            } catch (InvocationTargetException e) {
+                // BÓC một lớp - trang gốc quên bước này (mục 6, t6 mục 10).
+                throw new RuntimeException(e.getCause());
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     void main() {
+        BeanFactory factory = BeanFactory.INSTANCE;
+
+        // 1. Tầng một: không có @Singleton -> mỗi lần gọi là một object mới.
+        System.out.println("1. " + factory.getInstanceOf(Message.class, "Hello")
+                + " / " + factory.getInstanceOf(Message.class, "world"));
+
+        // 2. Tầng hai: có @Singleton -> cùng một object.
+        DBService db1 = factory.getInstanceOf(DBService.class);
+        DBService db2 = factory.getInstanceOf(DBService.class);
+        System.out.println("2. Instances of DBService are the same? " + (db1 == db2));
+
+        // 3. Tầng ba: @Inject. Bốn bước này là toàn bộ cơ chế của @Autowired (mục 4).
+        MyApplication app = factory.getInstanceOf(MyApplication.class);
+        System.out.println("3. App has been created with a DBService: " + (app.dbService() != null));
+        System.out.println("   dung chung singleton?                 : " + (app.dbService() == db1));
+
+        // 4. Khớp chữ ký CHÍNH XÁC, không hiểu đa hình - y hệt t12 mục 6.
+        try {
+            factory.getInstanceOf(Message.class, new StringBuilder("Hello"));
+        } catch (RuntimeException e) {
+            System.out.println("4. truyen StringBuilder -> " + e.getCause());
+        }
+
+        // 5. GIỚI HẠN LỚN NHẤT: field kiểu interface thì getType() trả về chính interface,
+        //    mà interface thì không newInstance được (t7 mục 5a). Container thật phải có
+        //    BẢNG ÁNH XẠ interface -> implementation; thiếu nó thì đây mới chỉ là
+        //    auto-new, chưa phải DI (mục 5).
+        try {
+            factory.getInstanceOf(BadApplication.class);
+        } catch (RuntimeException e) {
+            System.out.println("5. field kieu interface -> " + e.getCause());
+        }
+
+        System.out.println();
         // TODO 1 (mục 2): Viết record Message và enum BeanFactory với getInstanceOf ba bước.
         //   Chạy ví dụ của trang gốc và dán output.
         //

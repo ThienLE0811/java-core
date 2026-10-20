@@ -1,5 +1,7 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.reflect.Field;
+
 /**
  * Reading and Writing Fields
  * <p>
@@ -285,7 +287,43 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t5_ReadingAndWritingFields {
 
-    void main() {
+    void main() throws ReflectiveOperationException {
+        User maria = new User("Maria", 30);
+
+        // 1. Quy tắc tầm nhìn VẪN CÒN HIỆU LỰC với Reflection API (mục 5)
+        Field nameField = User.class.getDeclaredField("name");
+        try {
+            nameField.get(maria);
+        } catch (IllegalAccessException e) {
+            System.out.println("1. get() chưa setAccessible -> " + e.getMessage());
+        }
+
+        // 2. setAccessible(true) tắt khâu kiểm tra -> đọc được (mục 5)
+        nameField.setAccessible(true);
+        System.out.println("2. sau setAccessible(true)    -> " + nameField.get(maria));
+
+        // 3. Nó tắt LUÔN kiểm tra final: name là private FINAL mà vẫn ghi được (mục 7)
+        //    Lưu ý: JDK 26 sẽ cảnh báo, tương lai sẽ chặn (JEP 500).
+        nameField.set(maria, "Mary");
+        System.out.println("3. sau set() trên field final -> " + nameField.get(maria));
+
+        // 4. CÂU QUAN TRỌNG NHẤT CỦA BÀI: setAccessible KHÔNG làm field hết private.
+        //    Cờ đó đặt trên OBJECT Field đang cầm, không đặt lên lớp User.
+        //    Lấy một object Field MỚI cho cùng field đó -> vẫn bị chặn y như cũ.
+        Field nameFieldMoi = User.class.getDeclaredField("name");
+        try {
+            nameFieldMoi.get(maria);
+        } catch (IllegalAccessException e) {
+            System.out.println("4. Field MỚI cùng field đó   -> vẫn IllegalAccessException");
+        }
+
+        // 5. Field là MÔ TẢ dùng chung cho mọi instance, nên phải chỉ rõ "của object nào".
+        //    Field static không thuộc instance nào -> truyền null (mục 4).
+        Field countField = User.class.getDeclaredField("count");
+        countField.setAccessible(true);
+        System.out.println("5. field static, get(null)    -> " + countField.get(null));
+
+        System.out.println();
         // TODO 1 (mục 1): Chạy getDeclaredFields() trên ArrayList kèm accessFlags() và dán
         //   output JDK 25 vào note. So sánh với bảng của trang gốc - có khác gì không?
         //
@@ -337,5 +375,25 @@ public class t5_ReadingAndWritingFields {
         // TODO 15 (mục 12): Viết "mini field injector": với mỗi field có annotation @Inject
         //   của bạn, tạo instance bằng constructor rỗng rồi set vào. Đây là bản nháp cho bài
         //   t13 - giữ lại code.
+    }
+}
+
+/**
+ * Lớp làm đối tượng soi cho bài t5.
+ * <p>
+ * CỐ Ý để ở mức top-level (không phải lớp lồng): lớp lồng là NESTMATE của lớp bao
+ * (JEP 181, Java 11) nên reflection đọc được field private của nó mà không cần
+ * {@code setAccessible} - như vậy sẽ không minh họa được mục 5.
+ */
+class User {
+
+    private final String name;
+    private int age;
+    private static int count = 0;
+
+    User(String name, int age) {
+        this.name = name;
+        this.age = age;
+        count++;
     }
 }

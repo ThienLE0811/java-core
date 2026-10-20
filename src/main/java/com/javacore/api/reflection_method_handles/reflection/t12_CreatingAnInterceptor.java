@@ -1,5 +1,14 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+
 /**
  * Creating an Interceptor with Annotations
  * <p>
@@ -220,7 +229,147 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t12_CreatingAnInterceptor {
 
-    void main() {
+    // ==================================================================
+    // PHẦN 1 - BẢN CỦA TRANG GỐC: annotation + ServiceFactory, không Proxy
+    // ==================================================================
+
+    /** Ba tham số đúng là ba thứ cần để gọi lại method bằng reflection (mục 2). */
+    public interface Interceptor<T, R> {
+        R intercept(T interceptedObject, Method method, Object... arguments);
+    }
+
+    /** RUNTIME là BẮT BUỘC - thiếu nó cả bài này im lặng không chạy (t11 mục 6). */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Intercept {
+        Class<? extends Interceptor<?, ?>> value();
+    }
+
+    public static class SomeInterceptedService {
+
+        @Intercept(MessageInterceptor.class)
+        public String message(String input) {
+            return input.toUpperCase();
+        }
+    }
+
+    public static class SomeNonInterceptedService {
+
+        public String message(String input) {
+            return input.toUpperCase();
+        }
+    }
+
+    /** Phần NGHIỆP VỤ: kiểm tra đối số -> gọi service -> sửa kết quả (mục 4). */
+    public static class MessageInterceptor implements Interceptor<SomeInterceptedService, String> {
+
+        @Override
+        public String intercept(SomeInterceptedService service, Method method, Object... arguments) {
+            // 1. Kiểm tra. Sai thì NÉM và service không bao giờ được gọi -
+            //    đây là quyền lực thật sự của interceptor.
+            if (arguments.length != 1 || !(arguments[0] instanceof String s) || s.isEmpty()) {
+                throw new IllegalArgumentException("can dung mot String khong rong");
+            }
+            // 2. Gọi service. Ở đây có thể SỬA đối số trước khi truyền.
+            String result;
+            try {
+                result = (String) method.invoke(service, arguments);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                // BÓC một lớp - trang gốc quên bước này (mục 8, t6 mục 10).
+                throw new RuntimeException(e.getCause());
+            }
+            // 3. Sửa kết quả trước khi trả về.
+            return result + " [was intercepted]";
+        }
+    }
+
+    /** Phần KỸ THUẬT: năm bước, mỗi bước là một bài đã học (mục 5). */
+    @SuppressWarnings("unchecked")
+    static Object invoke(Class<?> serviceClass, String methodName, Object... arguments)
+            throws ReflectiveOperationException {
+        Object service = serviceClass.getConstructor().newInstance();              // t7
+        Class<?>[] types = Arrays.stream(arguments)                                // t2
+                .map(Object::getClass)
+                .toArray(Class[]::new);
+        Method method = serviceClass.getDeclaredMethod(methodName, types);         // t6
+        if (!method.isAnnotationPresent(Intercept.class)) {                        // t11
+            return method.invoke(service, arguments);                              // không chặn
+        }
+        // Phải ép kiểu vì ANNOTATION KHÔNG HỖ TRỢ GENERIC - compiler cảnh báo và
+        // không kiểm tra giúp được (mục 5).
+        Interceptor<Object, Object> interceptor = (Interceptor<Object, Object>)
+                method.getDeclaredAnnotation(Intercept.class).value()
+                        .getConstructor().newInstance();
+        return interceptor.intercept(service, method, arguments);                  // gọi TRỰC TIẾP
+    }
+
+    // ==================================================================
+    // PHẦN 2 - BẢN THẬT DÙNG PROXY, VÀ BẪY GỌI NỘI BỘ (mục 7)
+    // ==================================================================
+
+    public interface MessageService {
+
+        String message(String input);
+
+        String callInternally(String input);
+    }
+
+    public static class MessageServiceImpl implements MessageService {
+
+        @Override
+        public String message(String input) {
+            return input.toUpperCase();
+        }
+
+        @Override
+        public String callInternally(String input) {
+            return this.message(input);   // lời gọi NỘI BỘ - không đi qua proxy
+        }
+    }
+
+    void main() throws ReflectiveOperationException {
+        // 1. Có @Intercept -> interceptor chạy thay service.
+        System.out.println("1. co @Intercept     = "
+                + invoke(SomeInterceptedService.class, "message", "Hello"));
+        System.out.println("   khong @Intercept  = "
+                + invoke(SomeNonInterceptedService.class, "message", "Hello"));
+
+        // 2. Interceptor có quyền TỪ CHỐI gọi service (mục 1, mục 4).
+        try {
+            invoke(SomeInterceptedService.class, "message", "");
+        } catch (IllegalArgumentException e) {
+            System.out.println("2. input rong        -> bi chan: " + e.getMessage());
+        }
+
+        // 3. Giới hạn trang gốc tự nêu: mảng kiểu suy ra từ ĐỐI SỐ THỰC, nên
+        //    getDeclaredMethod khớp chữ ký CHÍNH XÁC, không hiểu đa hình (mục 6).
+        try {
+            invoke(SomeInterceptedService.class, "message", new StringBuilder("Hello"));
+        } catch (NoSuchMethodException e) {
+            System.out.println("3. truyen StringBuilder -> NoSuchMethodException: " + e.getMessage());
+        }
+
+        // 4. Bản thật: proxy CÀI interface nên code gọi viết như bình thường (mục 7).
+        MessageService target = new MessageServiceImpl();
+        MessageService proxy = (MessageService) Proxy.newProxyInstance(
+                MessageService.class.getClassLoader(),
+                new Class<?>[]{MessageService.class},
+                (p, method, args) -> {
+                    System.out.println("   [proxy] chan " + method.getName());
+                    return method.invoke(target, args);
+                });
+        System.out.println("4. proxy.message(\"Hello\")");
+        System.out.println("   ket qua = " + proxy.message("Hello"));
+
+        // 5. BẪY NỔI TIẾNG NHẤT CỦA SPRING: callInternally gọi this.message() nên lời gọi
+        //    đó KHÔNG đi qua proxy -> chỉ thấy MỘT dòng [proxy], không phải hai.
+        //    Đây đúng là lý do @Transactional "không chạy" khi gọi nội bộ (mục 7).
+        System.out.println("5. proxy.callInternally(\"Hello\")");
+        System.out.println("   ket qua = " + proxy.callInternally("Hello"));
+
+        System.out.println();
         // TODO 1 (mục 2, 3): Viết interface Interceptor<T, R>, annotation @Intercept, và lớp
         //   SomeInterceptedService đúng như trang gốc.
         //

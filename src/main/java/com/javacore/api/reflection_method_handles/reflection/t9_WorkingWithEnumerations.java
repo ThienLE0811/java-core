@@ -1,5 +1,9 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+
 /**
  * Working with Enumerations
  * <p>
@@ -198,7 +202,76 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t9_WorkingWithEnumerations {
 
-    void main() {
+    /** Enum có field và constructor riêng - để thấy tham số của mình nằm ở đâu (mục 3). */
+    enum Days {
+        SATURDAY("Saturn"),
+        SUNDAY("Sun");
+
+        private final String planet;
+
+        Days(String planet) {
+            this.planet = planet;
+        }
+
+        public String planet() {
+            return planet;
+        }
+    }
+
+    /** Hằng có THÂN RIÊNG - mỗi hằng là một lớp con vô danh (mục 6). */
+    enum Op {
+        PLUS {
+            @Override
+            public int apply(int a, int b) {
+                return a + b;
+            }
+        },
+        MINUS {
+            @Override
+            public int apply(int a, int b) {
+                return a - b;
+            }
+        };
+
+        public abstract int apply(int a, int b);
+    }
+
+    void main() throws ReflectiveOperationException {
+        // 1. Ba API riêng cho enum. getEnumConstants() trả về null (KHÔNG phải mảng rỗng)
+        //    với lớp không phải enum - thêm một nguồn NPE (mục 1, mục 6).
+        System.out.println("1. Days.class.isEnum()      -> " + Days.class.isEnum());
+        System.out.println("   getEnumConstants()       -> " + Arrays.toString(Days.class.getEnumConstants()));
+        System.out.println("   String.getEnumConstants  -> " + Arrays.toString(String.class.getEnumConstants()));
+        //    values() trả BẢN SAO mới mỗi lần gọi, vì $VALUES là mảng và mảng sửa được (mục 4).
+        System.out.println("   values() == values()     -> " + (Days.values() == Days.values()));
+
+        // 2. Trình biên dịch chèn (name, ordinal) vào TRƯỚC tham số bạn viết (mục 2, mục 3).
+        Constructor<?> ctor = Days.class.getDeclaredConstructors()[0];
+        System.out.println("2. ctor của Days            -> " + ctor);
+
+        // 3. Nhưng không gọi được. JVM chặn ở acquireConstructorAccessor, tức TRƯỚC khi chạy
+        //    constructor - không phải chuyện quyền truy cập (mục 2, nối t7 mục 6).
+        ctor.setAccessible(true);
+        try {
+            ctor.newInstance("MONDAY", 2, "Moon");
+        } catch (IllegalArgumentException e) {
+            System.out.println("3. tạo hằng mới             -> IllegalArgumentException: " + e.getMessage());
+        }
+
+        // 4. getDeclaredFields() TRỘN LẪN hằng enum, field dữ liệu và field nội bộ $VALUES.
+        //    Không lọc bằng isEnumConstant() là sai (mục 4).
+        for (Field f : Days.class.getDeclaredFields()) {
+            System.out.printf("4. %-10s isEnumConstant = %s%n", f.getName(), f.isEnumConstant());
+        }
+
+        // 5. BẪY LỚN NHẤT CỦA BÀI: hằng có thân riêng là một LỚP CON VÔ DANH, nên
+        //    getClass() KHÔNG phải Op.class và isEnum() của nó là false (mục 6).
+        System.out.println("5. Op.PLUS.getClass()       -> " + Op.PLUS.getClass());
+        System.out.println("   getDeclaringClass()      -> " + Op.PLUS.getDeclaringClass());
+        System.out.println("   getClass().isEnum()      -> " + Op.PLUS.getClass().isEnum());
+        System.out.println("   Op.class.isEnum()        -> " + Op.class.isEnum());
+
+        System.out.println();
         // TODO 1 (mục 1): Tạo "enum Days { SATURDAY, SUNDAY }". In isEnum(), values(), và
         //   getEnumConstants(). Xác nhận hai mảng sau giống nhau nhưng KHÔNG cùng một object.
         //

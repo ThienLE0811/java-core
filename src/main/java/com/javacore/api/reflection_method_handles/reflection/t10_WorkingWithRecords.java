@@ -1,5 +1,10 @@
 package com.javacore.api.reflection_method_handles.reflection;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
+
 /**
  * Working with Records
  * <p>
@@ -182,7 +187,70 @@ package com.javacore.api.reflection_method_handles.reflection;
  */
 public class t10_WorkingWithRecords {
 
-    void main() {
+    public record Point(int x, int y) {
+    }
+
+    /** Lớp THƯỜNG có private final - để đối chứng với record ở ví dụ 4. */
+    static class Box {
+
+        private final int x;
+
+        Box(int x) {
+            this.x = x;
+        }
+
+        @Override
+        public String toString() {
+            return "Box[x=" + x + "]";
+        }
+    }
+
+    void main() throws ReflectiveOperationException {
+        Point p = new Point(1, 2);
+
+        // 1. Nhận diện record (từ Java 16). getRecordComponents() trả NULL - không phải
+        //    mảng rỗng - với lớp thường, y hệt getEnumConstants() ở t9 (mục 2, mục 5).
+        System.out.println("1. Point.isRecord()         -> " + Point.class.isRecord());
+        System.out.println("   String.isRecord()        -> " + String.class.isRecord());
+        System.out.println("   String.getRecordComp()   -> " + Arrays.toString(String.class.getRecordComponents()));
+
+        // 2. RecordComponent - lớp mới của Reflection API. getAccessor() cho thẳng object
+        //    Method, khỏi đoán tên: accessor của record là x(), KHÔNG phải getX() (mục 3).
+        for (RecordComponent rc : Point.class.getRecordComponents()) {
+            System.out.printf("2. %s | type = %s | accessor = %s | invoke -> %s%n",
+                    rc.getName(), rc.getType(), rc.getAccessor(), rc.getAccessor().invoke(p));
+        }
+
+        // 3. Field của record là private final -> ĐỌC được, nhưng phải setAccessible (mục 4).
+        Field fx = Point.class.getDeclaredField("x");
+        fx.setAccessible(true);
+        System.out.println("3. đọc field x              -> " + fx.getInt(p));
+
+        // 4. GHI thì KHÔNG, dù đã setAccessible. Đây là điểm đáng nhớ nhất của bài (mục 4).
+        try {
+            fx.setInt(p, 99);
+        } catch (IllegalAccessException e) {
+            System.out.println("4. ghi field của record     -> IllegalAccessException: " + e.getMessage());
+        }
+        //    Đối chứng: lớp thường có private final thì reflection GHI ĐƯỢC bình thường.
+        //    Khác biệt này là của riêng record, JVM cưỡng chế ở tầng dưới (mục 7).
+        Box box = new Box(1);
+        Field bx = Box.class.getDeclaredField("x");
+        bx.setAccessible(true);
+        bx.setInt(box, 99);
+        System.out.println("   ghi field của lớp thường -> " + box);
+
+        // 5. Thứ tự thành phần được ĐẢM BẢO (khác getDeclaredFields), và đó cũng là thứ tự
+        //    tham số của canonical constructor -> dựng lại record từ dữ liệu động.
+        //    Đây đúng là cách Jackson và Gson dựng record (mục 6, mục 8).
+        Class<?>[] types = Arrays.stream(Point.class.getRecordComponents())
+                .map(RecordComponent::getType)
+                .toArray(Class[]::new);
+        Constructor<?> canonical = Point.class.getDeclaredConstructor(types);
+        System.out.println("5. canonical ctor           -> " + canonical);
+        System.out.println("   newInstance(7, 8)        -> " + canonical.newInstance(7, 8));
+
+        System.out.println();
         // TODO 1 (mục 2): Tạo "public record Point(int x, int y)". In isRecord() của Point,
         //   String, một enum, và một mảng. Lập bảng.
         //

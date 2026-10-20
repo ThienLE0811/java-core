@@ -1,5 +1,10 @@
 package com.javacore.api.reflection_method_handles.introduction_to_method_handles;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.WrongMethodTypeException;
+
 /**
  * Introduction to Method Handles
  * <p>
@@ -238,7 +243,39 @@ package com.javacore.api.reflection_method_handles.introduction_to_method_handle
  */
 public class t1_IntroductionToMethodHandles {
 
-    void main() {
+    void main() throws Throwable {
+        // Lookup là "giấy phép". Quyền được kiểm tra DUY NHẤT ở đây, lúc gọi không kiểm tra nữa (mục 2, 3)
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+        // 1. MethodType chỉ mô tả CHỮ KÝ: trả về String, nhận 2 char. Chưa gắn với class nào (mục 4)
+        MethodType replaceType = MethodType.methodType(String.class, char.class, char.class);
+        System.out.println("1. MethodType          -> " + replaceType);
+
+        // 2. findVirtual: handle lấy ra có THÊM receiver làm tham số đầu tiên (mục 5)
+        MethodHandle replace = lookup.findVirtual(String.class, "replace", replaceType);
+        System.out.println("2. replace.type()      -> " + replace.type());
+        String replaced = (String) replace.invokeExact("hello world", 'o', '0');
+        System.out.println("   invokeExact         -> " + replaced);
+
+        // 3. invokeExact khớp kiểu TUYỆT ĐỐI: chỉ cần đổi chỗ ép kiểu trả về sang Object là
+        //    chữ ký tại call-site đã khác -> WrongMethodTypeException (mục 6a, mục 13)
+        try {
+            Object wrong = replace.invokeExact("hello world", 'o', '0');
+            System.out.println(wrong);
+        } catch (WrongMethodTypeException e) {
+            System.out.println("3. ép về Object        -> WrongMethodTypeException: " + e.getMessage());
+        }
+
+        // 4. Vẫn lời gọi đó, đổi sang invoke(): nó tự asType() nên chạy bình thường (mục 6b)
+        Object loose = replace.invoke("hello world", 'o', '0');
+        System.out.println("4. invoke()            -> " + loose);
+
+        // 5. findStatic: không có receiver, chữ ký đúng bằng chữ ký thật của method (mục 5)
+        MethodHandle valueOf = lookup.findStatic(String.class, "valueOf",
+                MethodType.methodType(String.class, int.class));
+        System.out.println("5. valueOf(123)        -> " + (String) valueOf.invokeExact(123));
+
+        System.out.println();
         // TODO 1 (mục 3 & 4): Tạo MethodHandles.Lookup qua MethodHandles.lookup().
         //   Tạo một MethodType mô tả hàm nhận vào String và trả về int (ví dụ String.length).
         //   In đối tượng Lookup và MethodType ra console, quan sát định dạng chuỗi của chúng.
