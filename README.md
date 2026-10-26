@@ -192,3 +192,8 @@ tiếp theo đến với "https://dev.java/learn/language/fp/generics/restrictio
 cần diễn giải
 
 ngắn gọn nhất thì bài này muốn người học hiểu được gì
+
+######################################################## Review đoạn Java này như một senior backend reviewer. Chỉ ra:
+
+1) bug hoặc edge case chưa xử lý, 2) chỗ chưa đúng idiom Java hiện đại (Java 21),
+3) vấn đề hiệu năng/độ phức tạp. Không viết lại toàn bộ, chỉ chỉ ra vấn đề và gợi ý
