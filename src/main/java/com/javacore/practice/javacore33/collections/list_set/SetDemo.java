@@ -1,4 +1,4 @@
-package com.javacore.practice.javacore33.collections;
+package com.javacore.practice.javacore33.collections.list_set;
 
 import java.util.ArrayList;
 import java.util.Comparator;

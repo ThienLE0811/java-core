@@ -1,6 +1,5 @@
-package com.javacore.practice.javacore33.collections;
+package com.javacore.practice.javacore33.collections.list_set;
 
-import com.javacore.practice.javacore33.oop.sanpham.Product;
 import com.javacore.practice.javacore33.records.Point;
 
 import java.util.ArrayList;

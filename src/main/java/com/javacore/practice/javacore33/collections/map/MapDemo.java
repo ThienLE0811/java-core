@@ -1,4 +1,4 @@
-package com.javacore.practice.javacore33.collections;
+package com.javacore.practice.javacore33.collections.map;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
