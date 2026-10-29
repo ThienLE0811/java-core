@@ -1,11 +1,6 @@
 package com.javacore.practice.javacore33.collections.map;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Demo bài 18 - {@link HashMap}: Cơ chế bên trong, đếm tần suất và các cạm bẫy thực tế.
@@ -18,6 +13,9 @@ public class MapDemo {
         thamHoaMutableKey();
         baLoaiMap();
         nullTrongMap();
+        computeIfAbsentVaMultimap();
+        camBayConcurrentModification();
+        duyetKeySetVsEntrySet();
     }
 
     private static void demTanSuatVaTop5() {
@@ -146,6 +144,214 @@ public class MapDemo {
         // Map.of cấm cả null key lẫn null value
         thu("Map.of(null, val)", () -> Map.of(null, "loi"));
         thu("Map.of(key, null)", () -> Map.of("key", null));
+    }
+
+    private static void computeIfAbsentVaMultimap() {
+        System.out.println();
+        System.out.println("=== 6. computeIfAbsent: xây Multimap Map<K, List<V>> ===");
+
+        List<String> tuKhoa = WordCounter.extractWords("Java Python Pascal Go Groovy Ruby Rust R Perl");
+        System.out.println("Đầu vào: " + tuKhoa);
+
+        // Cách thủ công: get -> kiểm tra null -> tạo List -> put -> add (5 dòng)
+        Map<Character, List<String>> thuCong = new TreeMap<>();
+        for (String tu : tuKhoa) {
+            List<String> nhom = thuCong.get(tu.charAt(0));
+            if (nhom == null) {
+                nhom = new ArrayList<>();
+                thuCong.put(tu.charAt(0), nhom);
+            }
+            nhom.add(tu);
+        }
+        System.out.println("Thủ công (get + null check + put): " + thuCong);
+
+        // computeIfAbsent gộp đúng 5 dòng trên thành 1 dòng
+        Map<Character, List<String>> gon = WordCounter.groupByFirstLetter(tuKhoa);
+        System.out.println("computeIfAbsent                  : " + gon);
+        System.out.println("Hai kết quả giống nhau? " + thuCong.equals(gon));
+
+        // Điểm mấu chốt: hàm tạo giá trị là LAZY - chỉ chạy khi key CHƯA tồn tại
+        System.out.println("\nTính lazy của computeIfAbsent:");
+        Map<String, List<String>> lazy = new HashMap<>();
+        lazy.computeIfAbsent("a", k -> taoListCoLog("lần 1 - key 'a' chưa có"));
+        lazy.computeIfAbsent("a", k -> taoListCoLog("lần 2 - key 'a' đã có"));
+        System.out.println("  -> Chỉ in 1 dòng: lần 2 KHÔNG gọi hàm tạo. Map hiện tại: " + lazy);
+
+        // Ngược lại, putIfAbsent nhận sẵn một VALUE -> new ArrayList<>() luôn bị tạo rồi vứt đi
+        System.out.println("\nSo với putIfAbsent (eager):");
+        Map<String, List<String>> eager = new HashMap<>();
+        eager.putIfAbsent("a", taoListCoLog("lần 1 - key 'a' chưa có"));
+        eager.putIfAbsent("a", taoListCoLog("lần 2 - key 'a' đã có"));
+        System.out.println("  -> In 2 dòng: lần 2 vẫn cấp phát object thừa rồi bỏ. Map hiện tại: " + eager);
+
+        // Cạm bẫy: hàm tạo trả null -> KHÔNG có entry nào được thêm (không phải put(key, null))
+        Map<String, List<String>> traNull = new HashMap<>();
+        List<String> ketQua = traNull.computeIfAbsent("x", k -> null);
+        System.out.println("\ncomputeIfAbsent trả null -> giá trị nhận được: " + ketQua
+                + ", map rỗng? " + traNull.isEmpty() + "  <- KHÔNG tạo entry key='x'");
+    }
+
+    private static List<String> taoListCoLog(String nhan) {
+        System.out.println("  [tạo ArrayList mới] " + nhan);
+        return new ArrayList<>();
+    }
+
+    private static void camBayConcurrentModification() {
+        System.out.println();
+        System.out.println("=== 7. ConcurrentModificationException: vừa duyệt vừa xóa ===");
+        System.out.println("Map gốc: " + taoMapDiem() + " (cần xóa các học viên dưới 5 điểm)");
+
+        // SAI: sửa cấu trúc map trong khi iterator của for-each đang chạy
+        // -> iterator phát hiện modCount đổi -> fail-fast ném CME
+        System.out.println("\nCách SAI:");
+        thu("for-each keySet() + map.remove()", () -> {
+            Map<String, Integer> map = taoMapDiem();
+            for (String key : map.keySet()) {
+                if (map.get(key) < 5) {
+                    map.remove(key);
+                }
+            }
+        });
+        thu("for-each entrySet() + map.put(key mới)", () -> {
+            Map<String, Integer> map = taoMapDiem();
+            for (Map.Entry<String, Integer> e : map.entrySet()) {
+                map.put(e.getKey() + "_backup", e.getValue());
+            }
+        });
+
+        System.out.println("\nCách ĐÚNG:");
+
+        // 1. Iterator.remove(): iterator tự cập nhật modCount nên không bị fail-fast
+        Map<String, Integer> m1 = taoMapDiem();
+        Iterator<Map.Entry<String, Integer>> it = m1.entrySet().iterator();
+        while (it.hasNext()) {
+            if (it.next().getValue() < 5) {
+                it.remove();
+            }
+        }
+        System.out.println("  Iterator.remove()      -> " + m1);
+
+        // 2. removeIf trên entrySet - ngắn gọn nhất, nên dùng mặc định
+        Map<String, Integer> m2 = taoMapDiem();
+        m2.entrySet().removeIf(entry -> entry.getValue() < 5);
+        System.out.println("  entrySet().removeIf()  -> " + m2);
+
+        // 3. Chỉ quan tâm value thì dùng thẳng view values()
+        Map<String, Integer> m3 = taoMapDiem();
+        m3.values().removeIf(diem -> diem < 5);
+        System.out.println("  values().removeIf()    -> " + m3);
+
+        // 4. Chỉ ĐỔI GIÁ TRỊ (không thêm/bớt key) thì for-each vẫn an toàn,
+        //    vì setValue()/replaceAll() không làm thay đổi cấu trúc map.
+        Map<String, Integer> m4 = taoMapDiem();
+        m4.replaceAll((ten, diem) -> Math.min(10, diem + 1));
+        System.out.println("  replaceAll() cộng 1 điểm -> " + m4);
+
+        System.out.println("\n-> LƯU Ý: CME là cơ chế fail-fast 'best effort', KHÔNG phải bảo đảm."
+                + " Có trường hợp xóa xong vòng lặp thoát êm mà không ném gì cả"
+                + " -> càng nguy hiểm vì bug lọt qua test.");
+    }
+
+    private static Map<String, Integer> taoMapDiem() {
+        Map<String, Integer> diem = new LinkedHashMap<>();
+        diem.put("An", 8);
+        diem.put("Binh", 3);
+        diem.put("Cuong", 9);
+        diem.put("Dung", 4);
+        diem.put("Em", 7);
+        return diem;
+    }
+
+    private static void duyetKeySetVsEntrySet() {
+        System.out.println();
+        System.out.println("=== 8. Duyệt Map: keySet() + get() vs entrySet() ===");
+
+        Map<KhoaDemHash, Integer> map = new HashMap<>();
+        for (int i = 1; i <= 5; i++) {
+            map.put(new KhoaDemHash("key" + i), i);
+        }
+
+        // Cách 1: duyệt key rồi gọi get() -> mỗi vòng phải băm lại key để tra bucket
+        KhoaDemHash.soLanGoiHashCode = 0;
+        int tong1 = 0;
+        for (KhoaDemHash key : map.keySet()) {
+            tong1 += map.get(key);
+        }
+        int lanKeySet = KhoaDemHash.soLanGoiHashCode;
+
+        // Cách 2: duyệt entrySet -> key và value lấy thẳng từ node, không băm lại
+        KhoaDemHash.soLanGoiHashCode = 0;
+        int tong2 = 0;
+        for (Map.Entry<KhoaDemHash, Integer> entry : map.entrySet()) {
+            tong2 += entry.getValue();
+        }
+        int lanEntrySet = KhoaDemHash.soLanGoiHashCode;
+
+        // Cách 3: forEach - tương đương entrySet, viết gọn hơn
+        KhoaDemHash.soLanGoiHashCode = 0;
+        int[] tong3 = {0};
+        map.forEach((key, value) -> tong3[0] += value);
+        int lanForEach = KhoaDemHash.soLanGoiHashCode;
+
+        System.out.println("Map có " + map.size() + " phần tử, cùng tính tổng value:");
+        System.out.printf("  keySet() + get() : tổng=%d, số lần gọi hashCode() = %d%n", tong1, lanKeySet);
+        System.out.printf("  entrySet()       : tổng=%d, số lần gọi hashCode() = %d%n", tong2, lanEntrySet);
+        System.out.printf("  forEach()        : tổng=%d, số lần gọi hashCode() = %d%n", tong3[0], lanForEach);
+
+        System.out.println("-> keySet() + get() tra bảng băm THÊM 1 lần cho mỗi phần tử (kèm cả equals()).");
+        System.out.println("-> Chỉ dùng keySet() khi thật sự KHÔNG cần value. Cần cả hai thì luôn entrySet()/forEach().");
+
+        Map<String, Integer> tanSuat;
+
+        for (int i = 1; i <= 5; i++) {
+            map.put(new KhoaDemHash("key" + i), i);
+        }
+
+    }
+
+    // test xóa trùng, viết hoa rồi sắp xếp
+    public static List<String> tuLapLai(Map<String, Integer> tanSuat) {
+        List<String> ketQua = new ArrayList<>();
+
+        for (Map.Entry<String, Integer> e : tanSuat.entrySet()) {
+            if (e.getValue() >= 2) {
+                ketQua.add(e.getKey().toUpperCase(Locale.ROOT));
+            }
+        }
+
+        // (4) sắp xếp ketQua A-Z
+        ketQua.sort(Comparator.naturalOrder());
+        return ketQua;
+    }
+
+
+    // Class đếm số lần hashCode() được gọi, để đo chi phí tra bảng băm
+    private static final class KhoaDemHash {
+        static int soLanGoiHashCode;
+
+        private final String ten;
+
+        KhoaDemHash(String ten) {
+            this.ten = ten;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof KhoaDemHash other)) return false;
+            return Objects.equals(ten, other.ten);
+        }
+
+        @Override
+        public int hashCode() {
+            soLanGoiHashCode++;
+            return Objects.hash(ten);
+        }
+
+        @Override
+        public String toString() {
+            return ten;
+        }
     }
 
     // Class giả lập va chạm mã băm

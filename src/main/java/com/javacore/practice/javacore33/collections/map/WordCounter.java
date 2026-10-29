@@ -1,5 +1,6 @@
 package com.javacore.practice.javacore33.collections.map;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 /**
@@ -110,6 +112,24 @@ public final class WordCounter {
                 .map(Map.Entry::getKey)
                 .sorted()
                 .toList();
+    }
+
+    // Nhóm các từ theo chữ cái đầu bằng computeIfAbsent: nếu key chưa có thì tạo List rỗng
+    // rồi trả về chính List đó để .add() ngay - thay cho cụm get + null check + put.
+    // Dùng TreeMap để kết quả luôn xác định (sắp theo chữ cái đầu).
+    public static Map<Character, List<String>> groupByFirstLetter(List<String> words) {
+        if (words == null || words.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Character, List<String>> groups = new TreeMap<>();
+        for (String word : words) {
+            if (word == null || word.isBlank()) {
+                continue;
+            }
+            groups.computeIfAbsent(word.charAt(0), key -> new ArrayList<>()).add(word);
+        }
+        return groups;
     }
 
     /**
