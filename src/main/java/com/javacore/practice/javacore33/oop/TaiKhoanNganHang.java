@@ -147,6 +147,10 @@ public class TaiKhoanNganHang {
         this.lichSu.add(gd);
     }
 
+    public String getSoTaiKhoan() {
+        return this.soTaiKhoan;
+    }
+
     public BigDecimal getSoDu() {
         return this.soDu;
     }
