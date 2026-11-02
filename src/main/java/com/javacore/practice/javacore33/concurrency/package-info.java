@@ -1,6 +1,14 @@
 /**
- * Phần 6 - Concurrency (bài 34): race condition, synchronized, AtomicInteger,
+ * Phần 6 - Concurrency.
+ *
+ * <p>Bài 34 ({@code chuyentien}): race condition, synchronized, AtomicInteger,
  * ReentrantLock, deadlock và lock ordering.
+ *
+ * <p>Bài 35 ({@code taifile}, {@code demtu}): ExecutorService, Future,
+ * invokeAll, shutdown đúng cách, ConcurrentHashMap và virtual thread.
+ *
+ * <p>Bài 36 ({@code dashboard}): CompletableFuture, thenApply/thenCompose/
+ * thenCombine/allOf, exceptionally, orTimeout và completeOnTimeout.
  *
  * <p>Khác các package trước: phần lớn nội dung ở đây phải <em>chạy và quan sát</em>
  * mới thấy, nên trọng tâm nằm ở các class {@code ...Demo} chứ không phải ở test.
