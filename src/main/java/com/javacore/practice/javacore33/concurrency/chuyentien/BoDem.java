@@ -1,4 +1,4 @@
-package com.javacore.practice.javacore33.concurrency;
+package com.javacore.practice.javacore33.concurrency.chuyentien;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;

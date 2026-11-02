@@ -1,4 +1,4 @@
-package com.javacore.practice.javacore33.concurrency;
+package com.javacore.practice.javacore33.concurrency.chuyentien;
 
 import com.javacore.practice.javacore33.oop.TaiKhoanNganHang;
 
